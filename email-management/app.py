@@ -1,6 +1,6 @@
 """Point d'entree de l'application Dash."""
 
-from dash import Dash, Input, Output, State, html
+from dash import Dash, Input, Output, State, html, ctx
 
 import config
 from alerts.alert_manager import check_alert, send_alert_email
@@ -13,8 +13,26 @@ from data.sample_emails import build_sample_emails
 from services.email_receiver import fetch_recent_emails
 from services.email_sender import send_email
 
-app = Dash(__name__)
+app = Dash(__name__, suppress_callback_exceptions=True)
 app.title = "Email Management Dashboard"
+app.index_string = """<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>"""
 
 # Stockage en memoire (pas de base de donnees).
 INBOX = build_sample_emails()
@@ -38,10 +56,29 @@ def get_emails():
 app.layout = build_layout(compute_kpis(INBOX, SENT_COUNT), INBOX)
 
 
-@app.callback(Output("tab-content", "children"), Input("main-tabs", "value"))
-def render_tab(tab_value):
+@app.callback(
+    Output("active-page", "data"),
+    Input("nav-dashboard", "n_clicks"),
+    Input("nav-emails", "n_clicks"),
+    Input("nav-send", "n_clicks"),
+    Input("nav-alerts", "n_clicks"),
+    prevent_initial_call=True,
+)
+def set_active_page(n_dash, n_emails, n_send, n_alerts):
+    triggered = ctx.triggered_id
+    if triggered == "nav-emails":
+        return "emails"
+    if triggered == "nav-send":
+        return "send"
+    if triggered == "nav-alerts":
+        return "alerts"
+    return "dashboard"
+
+
+@app.callback(Output("tab-content", "children"), Input("active-page", "data"))
+def render_tab(active_page):
     emails = get_emails()
-    if tab_value == "tab-dashboard":
+    if active_page == "dashboard":
         kpis = compute_kpis(emails, SENT_COUNT)
         return dashboard_tab(
             kpis,
@@ -51,13 +88,13 @@ def render_tab(tab_value):
             fig_cat=fig_emails_by_category(emails),
             table=build_email_table(emails, limit=5),
         )
-    if tab_value == "tab-emails":
+    if active_page == "emails":
         return emails_tab(emails)
-    if tab_value == "tab-send":
+    if active_page == "send":
         return send_tab()
-    if tab_value == "tab-alerts":
+    if active_page == "alerts":
         return alerts_tab()
-    return html.Div("Onglet inconnu.")
+    return html.Div("Page inconnue.")
 
 
 @app.callback(Output("email-body-view", "children"), Input("email-select", "value"))
