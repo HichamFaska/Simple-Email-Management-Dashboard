@@ -19,6 +19,35 @@ body {
   gap: 8px;
 }
 
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .sidebar-title {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .nav-btn {
+    width: auto;
+    flex: 1 1 auto;
+  }
+
+  .sidebar-footer {
+    width: 100%;
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+}
+
 .sidebar-title {
   font-size: 20px;
   font-weight: bold;
@@ -53,6 +82,12 @@ body {
 .main-content {
   flex: 1;
   padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 16px;
+  }
 }
 
 .page-title {
