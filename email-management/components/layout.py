@@ -41,6 +41,7 @@ def build_layout(kpis, emails, alert_message=""):
             html.Main(
                 className="main-content",
                 children=[
+                    html.Button("☰ Menu", id="sidebar-toggle-btn", className="primary-btn", style={"marginBottom": "12px"}),
                     html.H1("Email Management Dashboard", className="page-title"),
                     dcc.Store(id="active-page", data="dashboard"),
                     html.Div(id="tab-content", children=[dashboard_tab(kpis, emails)]),
