@@ -13,26 +13,8 @@ from data.sample_emails import build_sample_emails
 from services.email_receiver import fetch_recent_emails
 from services.email_sender import send_email
 
-app = Dash(__name__, suppress_callback_exceptions=True)
+app = Dash(__name__)
 app.title = "Email Management Dashboard"
-app.index_string = """<!DOCTYPE html>
-<html>
-    <head>
-        {%metas%}
-        <title>{%title%}</title>
-        {%favicon%}
-        {%css%}
-        <script src="https://cdn.tailwindcss.com"></script>
-    </head>
-    <body>
-        {%app_entry%}
-        <footer>
-            {%config%}
-            {%scripts%}
-            {%renderer%}
-        </footer>
-    </body>
-</html>"""
 
 # Stockage en memoire (pas de base de donnees).
 INBOX = build_sample_emails()
