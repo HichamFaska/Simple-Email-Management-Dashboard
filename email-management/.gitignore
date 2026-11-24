@@ -1,0 +1,17 @@
+# Environnement virtuel
+.venv/
+venv/
+env/
+
+# Variables d'environnement (ne jamais committer les identifiants)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Dash / outils
+.DS_Store
+*.log
