@@ -7,6 +7,7 @@ from alerts.alert_manager import check_alert, send_alert_email
 from analytics.classifier import classify_email
 from analytics.statistics import compute_kpis
 from components.charts import fig_emails_by_category, fig_emails_per_day, fig_emails_per_hour
+from components.email_table import build_email_table
 from components.layout import alerts_tab, build_layout, dashboard_tab, emails_tab, send_tab
 from data.sample_emails import build_sample_emails
 from services.email_receiver import fetch_recent_emails
@@ -27,7 +28,6 @@ def get_emails():
 
     try:
         fetched = fetch_recent_emails(limit=20)
-        # Enrichir avec categorie pour l'affichage.
         for item in fetched:
             item["category"] = classify_email(item.get("subject", ""), item.get("body", ""))
         return fetched if fetched else INBOX
@@ -42,7 +42,15 @@ app.layout = build_layout(compute_kpis(INBOX, SENT_COUNT), INBOX)
 def render_tab(tab_value):
     emails = get_emails()
     if tab_value == "tab-dashboard":
-        return dashboard_tab(compute_kpis(emails, SENT_COUNT), emails)
+        kpis = compute_kpis(emails, SENT_COUNT)
+        return dashboard_tab(
+            kpis,
+            emails,
+            fig_day=fig_emails_per_day(emails),
+            fig_hour=fig_emails_per_hour(emails),
+            fig_cat=fig_emails_by_category(emails),
+            table=build_email_table(emails, limit=5),
+        )
     if tab_value == "tab-emails":
         return emails_tab(emails)
     if tab_value == "tab-send":
@@ -52,35 +60,13 @@ def render_tab(tab_value):
     return html.Div("Onglet inconnu.")
 
 
-@app.callback(
-    Output("fig-per-day", "figure"),
-    Output("fig-per-hour", "figure"),
-    Output("fig-by-category", "figure"),
-    Output("latest-table", "children"),
-    Input("main-tabs", "value"),
-)
-def update_dashboard_charts(tab_value):
-    emails = get_emails()
-    if tab_value != "tab-dashboard":
-        return fig_emails_per_day([]), fig_emails_per_hour([]), fig_emails_by_category([]), None
-
-    from components.email_table import build_email_table
-
-    return (
-        fig_emails_per_day(emails),
-        fig_emails_per_hour(emails),
-        fig_emails_by_category(emails),
-        build_email_table(emails, limit=5),
-    )
-
-
 @app.callback(Output("email-body-view", "children"), Input("email-select", "value"))
 def show_email_body(email_id):
-    if email_id is None:
+    if email_id is None or email_id == "":
         return "Selectionnez un email pour afficher son contenu."
     emails = get_emails()
     for item in emails:
-        if item.get("id") == email_id:
+        if str(item.get("id")) == str(email_id):
             body = item.get("body", "")
             return body or "(Message vide)"
     return "Email introuvable."

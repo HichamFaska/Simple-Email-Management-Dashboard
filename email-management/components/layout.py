@@ -2,7 +2,6 @@
 
 from dash import dcc, html
 
-from components.email_table import build_email_table
 from config import MODE
 
 
@@ -24,9 +23,8 @@ def _card(title, value):
     )
 
 
-def build_layout(kpis, emails, selected_email_body="", alert_message=""):
+def build_layout(kpis, emails, alert_message=""):
     """Construire la mise en page complete du dashboard."""
-    table = build_email_table(emails, limit=5)
     mode_label = "Simulation" if MODE != "real" else "Reel (IMAP/SMTP)"
 
     return html.Div(
@@ -55,7 +53,7 @@ def build_layout(kpis, emails, selected_email_body="", alert_message=""):
                             dcc.Tab(label="Alertes", value="tab-alerts"),
                         ],
                     ),
-                    html.Div(id="tab-content", style={"marginTop": "16px"}),
+                    html.Div(id="tab-content", children=[dashboard_tab(kpis, emails)], style={"marginTop": "16px"}),
                     dcc.Store(id="stored-alert-message", data=alert_message),
                 ],
             )
@@ -63,7 +61,7 @@ def build_layout(kpis, emails, selected_email_body="", alert_message=""):
     )
 
 
-def dashboard_tab(kpis, emails):
+def dashboard_tab(kpis, emails, fig_day=None, fig_hour=None, fig_cat=None, table=None):
     """Contenu de l'onglet Dashboard."""
     return html.Div(
         children=[
@@ -79,13 +77,13 @@ def dashboard_tab(kpis, emails):
             html.Div(
                 style={"display": "grid", "gridTemplateColumns": "repeat(auto-fit, minmax(280px, 1fr))", "gap": "16px"},
                 children=[
-                    dcc.Graph(id="fig-per-day"),
-                    dcc.Graph(id="fig-per-hour"),
-                    dcc.Graph(id="fig-by-category"),
+                    dcc.Graph(id="fig-per-day", figure=fig_day),
+                    dcc.Graph(id="fig-per-hour", figure=fig_hour),
+                    dcc.Graph(id="fig-by-category", figure=fig_cat),
                 ],
             ),
             html.H3("5 derniers emails"),
-            html.Div(id="latest-table"),
+            html.Div(id="latest-table", children=table if table is not None else []),
         ]
     )
 
@@ -94,8 +92,15 @@ def emails_tab(emails):
     """Contenu de l'onglet Emails."""
     options = []
     for item in emails[:20]:
-        label = f"{item.get('date')} - {item.get('subject', '(Sans objet)')}"
-        options.append({"label": label, "value": item.get("id")})
+        date_value = item.get("date")
+        date_label = ""
+        if date_value is not None:
+            try:
+                date_label = date_value.strftime("%Y-%m-%d %H:%M")
+            except Exception:
+                date_label = str(date_value)
+        subject = item.get("subject", "(Sans objet)")
+        options.append({"label": f"{date_label} - {subject}", "value": str(item.get("id"))})
 
     return html.Div(
         children=[
